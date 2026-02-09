@@ -1,34 +1,15 @@
 import { Node, Edge } from '@xyflow/react';
 
-// ノードタイプの定義
-export type NodeType = 'start' | 'end' | 'task' | 'condition';
+// ノードタイプの定義（シンプル化：テキストノードのみ）
+export type NodeType = 'text';
 
 // カスタムノードデータの型
-export interface BaseNodeData extends Record<string, unknown> {
+export interface TextNodeData extends Record<string, unknown> {
   label: string;
-  description?: string;
+  onTextChange?: (nodeId: string, text: string) => void;
 }
 
-export interface StartNodeData extends BaseNodeData {
-  type: 'start';
-}
-
-export interface EndNodeData extends BaseNodeData {
-  type: 'end';
-}
-
-export interface TaskNodeData extends BaseNodeData {
-  type: 'task';
-  assignee?: string;
-  status?: 'pending' | 'in_progress' | 'completed';
-}
-
-export interface ConditionNodeData extends BaseNodeData {
-  type: 'condition';
-  condition?: string;
-}
-
-export type WorkflowNodeData = StartNodeData | EndNodeData | TaskNodeData | ConditionNodeData;
+export type WorkflowNodeData = TextNodeData;
 
 // ワークフローノードの型
 export type WorkflowNode = Node<WorkflowNodeData, NodeType>;

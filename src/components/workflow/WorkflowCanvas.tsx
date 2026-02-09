@@ -1,14 +1,14 @@
 'use client';
 
-import { useCallback, useRef, DragEvent } from 'react';
+import { useCallback, useRef, DragEvent, MouseEvent } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
   Background,
   Controls,
-  MiniMap,
   BackgroundVariant,
   useReactFlow,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -33,6 +33,8 @@ function Flow() {
     onEdgesChange,
     onConnect,
     addNode,
+    addNodeAtPosition,
+    updateNodeText,
   } = useWorkflowStore();
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
@@ -60,16 +62,45 @@ function Flow() {
     [screenToFlowPosition, addNode]
   );
 
+  // ダブルクリックで新しいノードを追加
+  const onDoubleClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      // ノードやエッジ上でのダブルクリックは無視
+      const target = event.target as HTMLElement;
+      if (target.closest('.react-flow__node') || target.closest('.react-flow__edge')) {
+        return;
+      }
+
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      addNodeAtPosition(position);
+    },
+    [screenToFlowPosition, addNodeAtPosition]
+  );
+
+  // ノードにテキスト変更ハンドラを注入
+  const nodesWithHandlers = nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      onTextChange: updateNodeText,
+    },
+  }));
+
   return (
     <div ref={reactFlowWrapper} className="flex-1 h-full">
       <ReactFlow
-        nodes={nodes}
+        nodes={nodesWithHandlers}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        onDoubleClick={onDoubleClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
@@ -77,42 +108,30 @@ function Flow() {
         snapGrid={[15, 15]}
         defaultEdgeOptions={{
           type: 'default',
-          animated: true,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: '#000000',
+          },
+          style: {
+            stroke: '#000000',
+            strokeWidth: 1,
+          },
         }}
-        connectionLineStyle={{ stroke: '#64748b', strokeWidth: 2 }}
+        connectionLineStyle={{ stroke: '#000000', strokeWidth: 1 }}
         deleteKeyCode="Backspace"
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={20}
           size={1}
-          color="#e2e8f0"
+          color="#cccccc"
         />
         <Controls
           showZoom
           showFitView
-          showInteractive
+          showInteractive={false}
           position="bottom-right"
-          className="bg-white rounded-lg shadow-md"
-        />
-        <MiniMap
-          nodeColor={(node) => {
-            switch (node.type) {
-              case 'start':
-                return '#22c55e';
-              case 'end':
-                return '#ef4444';
-              case 'task':
-                return '#3b82f6';
-              case 'condition':
-                return '#f59e0b';
-              default:
-                return '#64748b';
-            }
-          }}
-          maskColor="rgba(0, 0, 0, 0.1)"
-          position="bottom-left"
-          className="bg-white rounded-lg shadow-md"
+          className="bg-white border border-gray-300"
         />
       </ReactFlow>
     </div>

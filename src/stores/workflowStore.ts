@@ -20,7 +20,9 @@ interface WorkflowState {
   onEdgesChange: (changes: EdgeChange<WorkflowEdge>[]) => void;
   onConnect: (connection: Connection) => void;
   addNode: (type: NodeType, position: { x: number; y: number }) => void;
+  addNodeAtPosition: (position: { x: number; y: number }) => void;
   updateNodeData: (nodeId: string, data: Partial<WorkflowNodeData>) => void;
+  updateNodeText: (nodeId: string, text: string) => void;
   deleteNode: (nodeId: string) => void;
 
   // ワークフロー操作
@@ -30,33 +32,8 @@ interface WorkflowState {
   loadWorkflow: (json: string) => void;
 }
 
-const getDefaultLabel = (type: NodeType): string => {
-  switch (type) {
-    case 'start':
-      return '開始';
-    case 'end':
-      return '終了';
-    case 'task':
-      return 'タスク';
-    case 'condition':
-      return '条件分岐';
-    default:
-      return 'ノード';
-  }
-};
-
-const createNodeData = (type: NodeType): WorkflowNodeData => {
-  const label = getDefaultLabel(type);
-  switch (type) {
-    case 'start':
-      return { type: 'start', label };
-    case 'end':
-      return { type: 'end', label };
-    case 'task':
-      return { type: 'task', label, status: 'pending' };
-    case 'condition':
-      return { type: 'condition', label, condition: '' };
-  }
+const createNodeData = (): WorkflowNodeData => {
+  return { label: '' };
 };
 
 let nodeId = 0;
@@ -85,7 +62,6 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         {
           ...connection,
           type: 'default',
-          animated: true,
         },
         get().edges
       ),
@@ -97,7 +73,21 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       id: getNodeId(),
       type,
       position,
-      data: createNodeData(type),
+      data: createNodeData(),
+      style: { width: 150, height: 80 },
+    };
+    set({
+      nodes: [...get().nodes, newNode],
+    });
+  },
+
+  addNodeAtPosition: (position) => {
+    const newNode: WorkflowNode = {
+      id: getNodeId(),
+      type: 'text',
+      position,
+      data: createNodeData(),
+      style: { width: 150, height: 80 },
     };
     set({
       nodes: [...get().nodes, newNode],
@@ -109,6 +99,16 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       nodes: get().nodes.map((node) =>
         node.id === nodeId
           ? { ...node, data: { ...node.data, ...data } as WorkflowNodeData }
+          : node
+      ),
+    });
+  },
+
+  updateNodeText: (nodeId, text) => {
+    set({
+      nodes: get().nodes.map((node) =>
+        node.id === nodeId
+          ? { ...node, data: { ...node.data, label: text } as WorkflowNodeData }
           : node
       ),
     });

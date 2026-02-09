@@ -43,8 +43,8 @@ function DefaultEdge({
         markerEnd={markerEnd}
         style={{
           ...style,
-          strokeWidth: selected ? 3 : 2,
-          stroke: selected ? '#3b82f6' : '#64748b',
+          strokeWidth: selected ? 2 : 1,
+          stroke: '#000000',
         }}
       />
       <EdgeLabelRenderer>
@@ -58,11 +58,11 @@ function DefaultEdge({
         >
           <button
             className={`
-              w-5 h-5 rounded-full
-              bg-red-500 hover:bg-red-600
-              text-white text-xs
+              w-4 h-4
+              bg-white border border-black
+              text-black text-xs
               flex items-center justify-center
-              shadow-md transition-all duration-200
+              transition-opacity duration-200
               opacity-0 hover:opacity-100
               ${selected ? 'opacity-100' : ''}
             `}
