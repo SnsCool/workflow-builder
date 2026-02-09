@@ -9,12 +9,16 @@ import {
   BackgroundVariant,
   useReactFlow,
   MarkerType,
+  SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { nodeTypes } from '@/components/nodes';
 import DefaultEdge from '@/components/edges/DefaultEdge';
+import VerticalToolbar from '@/components/workflow/VerticalToolbar';
+import AlignmentMenu from '@/components/workflow/AlignmentMenu';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { NodeType } from '@/types/workflow';
 
 // edgeTypesをコンポーネント外で定義（再レンダリング防止）
@@ -35,7 +39,14 @@ function Flow() {
     addNode,
     addNodeAtPosition,
     updateNodeText,
+    currentTool,
+    setCurrentTool,
+    connectionSourceId,
+    setConnectionSourceId,
   } = useWorkflowStore();
+
+  // キーボードショートカットを有効化
+  useKeyboardShortcuts();
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -76,9 +87,71 @@ function Flow() {
         y: event.clientY,
       });
 
-      addNodeAtPosition(position);
+      // 現在のツールに基づいてノードタイプを決定
+      let nodeType: NodeType = 'text';
+      if (currentTool === 'ellipse') {
+        nodeType = 'ellipse';
+      }
+
+      addNodeAtPosition(position, nodeType);
     },
-    [screenToFlowPosition, addNodeAtPosition]
+    [screenToFlowPosition, addNodeAtPosition, currentTool]
+  );
+
+  // キャンバスクリック時の処理
+  const onPaneClick = useCallback(
+    (event: MouseEvent<Element>) => {
+      // 接続モードでクリックした場合
+      if (currentTool === 'connection') {
+        // ノード上でクリックした場合
+        const target = event.target as HTMLElement;
+        const nodeElement = target.closest('.react-flow__node');
+        if (nodeElement) {
+          const nodeId = nodeElement.getAttribute('data-id');
+          if (nodeId) {
+            if (!connectionSourceId) {
+              // 最初のノードを選択
+              setConnectionSourceId(nodeId);
+            } else if (connectionSourceId !== nodeId) {
+              // 2番目のノードを選択して接続を作成
+              onConnect({
+                source: connectionSourceId,
+                target: nodeId,
+                sourceHandle: null,
+                targetHandle: null,
+              });
+              setConnectionSourceId(null);
+            }
+          }
+        } else {
+          // 空白をクリックした場合は接続モードをリセット
+          setConnectionSourceId(null);
+        }
+      } else if (currentTool !== 'select') {
+        // ツールが選択されている場合、クリック位置にノードを追加
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        let nodeType: NodeType = 'text';
+        if (currentTool === 'ellipse') {
+          nodeType = 'ellipse';
+        }
+
+        addNodeAtPosition(position, nodeType);
+        setCurrentTool('select');
+      }
+    },
+    [
+      currentTool,
+      connectionSourceId,
+      setConnectionSourceId,
+      onConnect,
+      screenToFlowPosition,
+      addNodeAtPosition,
+      setCurrentTool,
+    ]
   );
 
   // ノードにテキスト変更ハンドラを注入
@@ -88,10 +161,12 @@ function Flow() {
       ...node.data,
       onTextChange: updateNodeText,
     },
+    // 接続モードでソースとして選択されているノードをハイライト
+    className: connectionSourceId === node.id ? 'ring-2 ring-blue-500' : '',
   }));
 
   return (
-    <div ref={reactFlowWrapper} className="flex-1 h-full">
+    <div ref={reactFlowWrapper} className="flex-1 h-full relative">
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edges}
@@ -101,11 +176,15 @@ function Flow() {
         onDragOver={onDragOver}
         onDrop={onDrop}
         onDoubleClick={onDoubleClick}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
         snapToGrid
         snapGrid={[15, 15]}
+        selectionOnDrag
+        panOnDrag={currentTool === 'select' ? [1, 2] : false}
+        selectionMode={SelectionMode.Partial}
         defaultEdgeOptions={{
           type: 'default',
           markerEnd: {
@@ -118,7 +197,7 @@ function Flow() {
           },
         }}
         connectionLineStyle={{ stroke: '#000000', strokeWidth: 1 }}
-        deleteKeyCode="Backspace"
+        deleteKeyCode={['Backspace', 'Delete']}
       >
         <Background
           variant={BackgroundVariant.Dots}
@@ -134,6 +213,8 @@ function Flow() {
           className="bg-white border border-gray-300"
         />
       </ReactFlow>
+      <VerticalToolbar />
+      <AlignmentMenu />
     </div>
   );
 }
