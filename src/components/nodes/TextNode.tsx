@@ -45,37 +45,31 @@ function TextNode({ id, data, selected }: NodeProps<TextNodeType>) {
   return (
     <>
       <NodeResizer
-        color="#000000"
+        color="#999999"
         isVisible={selected}
-        minWidth={100}
-        minHeight={50}
-        lineStyle={{ borderWidth: 1 }}
-        handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
+        minWidth={80}
+        minHeight={40}
+        lineStyle={{ borderWidth: 1, borderColor: '#999' }}
+        handleStyle={{ width: 6, height: 6, borderRadius: 0, backgroundColor: '#fff', border: '1px solid #999' }}
       />
 
       <Handle
         type="target"
         position={Position.Top}
-        className="!bg-black !w-2 !h-2 !border-0 !rounded-none"
+        className="!bg-transparent !w-3 !h-3 !border !border-gray-300 !rounded-none hover:!bg-gray-200"
       />
       <Handle
         type="target"
         position={Position.Left}
-        className="!bg-black !w-2 !h-2 !border-0 !rounded-none"
+        className="!bg-transparent !w-3 !h-3 !border !border-gray-300 !rounded-none hover:!bg-gray-200"
       />
 
       <div
         onDoubleClick={handleDoubleClick}
-        className={`
-          w-full h-full min-w-[100px] min-h-[50px]
-          bg-white border border-black
-          flex items-center justify-center
-          cursor-grab active:cursor-grabbing
-          font-sans text-sm
-          ${selected ? 'border-2' : 'border'}
-        `}
+        className="w-full h-full min-w-[100px] min-h-[50px] bg-white flex items-center justify-center cursor-grab active:cursor-grabbing font-sans text-sm"
         style={{
           padding: '8px',
+          border: '1px solid #333',
         }}
       >
         {isEditing ? (
@@ -104,12 +98,12 @@ function TextNode({ id, data, selected }: NodeProps<TextNodeType>) {
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!bg-black !w-2 !h-2 !border-0 !rounded-none"
+        className="!bg-transparent !w-3 !h-3 !border !border-gray-300 !rounded-none hover:!bg-gray-200"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!bg-black !w-2 !h-2 !border-0 !rounded-none"
+        className="!bg-transparent !w-3 !h-3 !border !border-gray-300 !rounded-none hover:!bg-gray-200"
       />
     </>
   );
